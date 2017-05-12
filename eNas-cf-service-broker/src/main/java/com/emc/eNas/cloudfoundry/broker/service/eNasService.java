@@ -95,7 +95,7 @@ public class eNasService {
 			}
 			CIMObjectPath fileExportServicePath = null;
 			fileExportService = client
-					.enumerateInstanceNames(new CIMObjectPath("root/celerra:Celerra_FileExportService"));
+					.enumerateInstanceNames(new CIMObjectPath("root/emc/celerra:Celerra_FileExportService"));
 			if (fileExportService.hasNext()) {
 				fileExportServicePath = fileExportService.next();
 			}

@@ -1,0 +1,25 @@
+security:
+  user:
+    password: password
+broker:
+  namespace: root/celerra
+  managementProvider: http://0.0.0.0:5988/root/celerra
+  port: 5989
+  SSLEnabled: true
+  username: nasadmin
+  password: nasadmin
+  fileSystemId:
+catalog:
+  services:
+    - id: 
+      name: eNas-fileshare
+      description: File Share on eNas
+      type: FileShare
+      
+      plans:
+        - id: 
+          name: 5gb
+          description: Free Trial
+          type: Unlimited
+         
+          

@@ -1,0 +1,79 @@
+buildscript {
+    ext {
+        springBootVersion = '1.5.1.RELEASE'
+    }
+    repositories {
+        mavenCentral()
+        maven { url 'http://repo.spring.io/plugins-release' }
+    }
+   
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'jacoco'
+
+jar {
+    baseName = 'eNas-cf-service-broker'
+    version = '0.0.1-SNAPSHOT'
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    maven { url "http://repo.spring.io/libs-snapshot" }
+}
+
+ext {
+	version = '0.0.1'
+	springCloudServiceBrokerVersion = '1.0.0.RELEASE'
+}
+
+dependencies {
+    compile(group: 'org.springframework.boot', name: 'spring-boot-starter-jersey', version: springBootVersion)
+    compile(group: 'org.springframework.boot', name: 'spring-boot-configuration-processor', version: springBootVersion)
+    compile(group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version: springBootVersion)
+
+    compile(group: 'org.springframework.cloud', name: 'spring-cloud-cloudfoundry-service-broker', version: springCloudServiceBrokerVersion)
+	
+    compile(group: 'com.emc.ecs', name: 'object-client', version: '3.0.0'){
+    	exclude module: "slf4j-log4j12"
+    }
+
+    testCompile(group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: springBootVersion)
+    testCompile(group: 'org.springframework.cloud', name: 'spring-cloud-cloudfoundry-service-broker', version: springCloudServiceBrokerVersion, classifier: "tests")
+    testCompile(group: 'com.github.tomakehurst', name: 'wiremock-standalone', version: '2.5.1')
+    testCompile(group: 'org.powermock', name: 'powermock-api-mockito', version: '1.6.6')
+    testCompile(group: 'org.powermock', name: 'powermock-module-junit4', version: '1.6.6')
+    
+    
+}
+
+eclipse {
+    classpath {
+         containers.remove('org.eclipse.jdt.launching.JRE_CONTAINER')
+         containers 'org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8'
+    }
+}
+
+springBoot {
+  executable = true
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.10'
+}
+
+
+
+jacocoTestReport {
+    reports {
+        xml.enabled = true
+        html.enabled = true
+    }
+}

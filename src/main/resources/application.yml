@@ -1,0 +1,18 @@
+security:
+  user:
+    name: user
+    password: password
+
+broker:
+  namespace: root/celerra
+  managementProvider: http://10.243.105.115:5989/root/emc/celerra
+  port: 5989
+  SSLEnabled: true
+  username: nasadmin
+  password: nasadmin
+  fileSystemId: 00019710012400016
+
+
+
+         
+          

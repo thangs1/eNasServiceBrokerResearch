@@ -1,0 +1,6 @@
+---
+applications:
+- name: eNas-broker
+  memory: 512M
+  path: build/libs/eNas-broker-0.0.1-SNAPSHOT.jar
+  buildpack: java_buildpack

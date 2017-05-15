@@ -1,0 +1,2 @@
+insert into services (id, name, description, bindable) values ('$serviceid', 'eNas-broker-$RANDOM', 'FileShare: as a Service', true);  
+insert into plans (id, name, description, service_id) values ('$planid', 'basic', 'Basic Plan', '$serviceid');  

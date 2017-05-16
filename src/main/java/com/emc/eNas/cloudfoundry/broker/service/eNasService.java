@@ -27,15 +27,12 @@ import org.springframework.stereotype.Service;
 import com.emc.eNas.cloudfoundry.broker.config.eNasBrokerConfiguration;
 import com.emc.eNas.cloudfoundry.broker.config.eNasClientException;
 
-
 @Service
 @Component
 public class eNasService {
 
 	@Autowired
 	private eNasBrokerConfiguration eNasBroker;
-	
-	
 
 	private WBEMClient instantiateWBEMClient() {
 		WBEMClient clientObj = null;
@@ -43,7 +40,7 @@ public class eNasService {
 		 * The host to connect to. In the form of a WBEM URL. Make sure the WBEM
 		 * Server is running before trying this example.
 		 */
-         
+
 		try {
 			/*
 			 * Create an object path using the host variable.
@@ -89,253 +86,91 @@ public class eNasService {
 	public static CIMObjectPath createInstance(String pObjectName, String pNamespace) {
 		return new CIMObjectPath(null, null, null, pNamespace, pObjectName, null);
 	}
-	
-	public void deleteFileSystem(String id) throws Exception {
-		CloseableIterator<CIMObjectPath> fileSystemPaths = null;
-		CloseableIterator<CIMObjectPath> fileSystemConfigServicePathItr = null;
-		
-		WBEMClient client = null;
-		try {
-           
-			client = instantiateWBEMClient();
-			CIMObjectPath fileSystemConfigServicePath = null;
-			CIMObjectPath poolPath = null;
-			
-			fileSystemConfigServicePathItr = client.enumerateInstanceNames(createCIMPath("root/emc/celerra:Celerra_FileSystemConfigurationService"));
-			
-			
-			while (fileSystemConfigServicePathItr.hasNext()) {
-				fileSystemConfigServicePath = fileSystemConfigServicePathItr.next();
-				if (null != fileSystemConfigServicePath) {
-					System.out.println("File System Service :"+ fileSystemConfigServicePath);
-					break;
-				}
-			}
-			
-			CIMObjectPath fileSystemPath = null;
-			fileSystemPaths = client.enumerateInstanceNames(createCIMPath("root/emc/celerra:Celerra_UxfsLocalFileSystem"));
-			while (fileSystemPaths.hasNext()) {
-			    CIMObjectPath tempFilePath =  fileSystemPaths.next();
-				
-				if (tempFilePath.toString().toLowerCase().contains(id.toLowerCase())) {
-					fileSystemPath = tempFilePath;
-					
-				    break;
-				}
-			}
-			System.out.println("File System to delete path found :"+ fileSystemPath);
-			CIMArgument[] argArray = new CIMArgument[] { 
-					reference("TheElement", fileSystemPath) };
-			for(CIMArgument arg : argArray) {
-				System.out.println("Argument :"+ arg.getName()+ ":"+ String.valueOf(arg.getValue()));
-			}
 
-			CIMArgument[] outArgs = new CIMArgument[5];
-			Object obj =  client.invokeMethod(fileSystemConfigServicePath, "SNIA_CreateExportedShare", argArray, outArgs);
-			
-			String str = protectedToString(obj);
-			System.out.println("Status :" + str);
-			
-			CIMObjectPath cimJobPath =
-	                getCimObjectPathFromOutputArgs(outArgs, "Job");
-			for(CIMArgument arg : outArgs) {
-				if(null != arg) 
-				System.out.println("OutArgument :"+ arg.getName()+ ":"+ String.valueOf(arg.getValue()));
-			}
-			
-			if(null != cimJobPath) {
-			
-			CIMInstance instance = client.getInstance(cimJobPath, false, false, null);
-			
-			
-			 CIMProperty<UnsignedInteger16> percentComplete =
-             (CIMProperty<UnsignedInteger16>) instance.getProperty("PercentComplete");
-			 
-			 while(percentComplete.getValue().intValue() < 100) {
-				 instance = client.getInstance(cimJobPath, false, false, null);
-					
-					System.out.println("Running");
-				  percentComplete =
-	             (CIMProperty<UnsignedInteger16>) instance.getProperty("PercentComplete");
-			 }
-			
-             System.out.println("Completed");
-			}
-		}finally {
-			if (null != fileSystemPaths)
-				fileSystemPaths.close();
-			if (null != fileSystemConfigServicePathItr)
-				fileSystemConfigServicePathItr.close();
-			if (null != client)
-				closeConnection(client);
-		}
-	}
+
+
 	
-	public void deleteFileShare() {
-		
-	}
+
 	
 	
-	public void createFileShare(String serviceInstanceId, String planId) throws Exception {
-		CloseableIterator<CIMObjectPath> fileSystemPaths = null;
-		CloseableIterator<CIMObjectPath> fileExportService = null;
-		WBEMClient client = null;
-		try
 
-		{
-
-			client = instantiateWBEMClient();
-			CIMObjectPath fileSystemPath = null;
-			fileSystemPaths = client.enumerateInstanceNames(createCIMPath("root/emc/celerra:Celerra_UxfsLocalFileSystem"));
-			System.out.println("Finding cerated file system :" + serviceInstanceId);
-			while (fileSystemPaths.hasNext()) {
-				CIMObjectPath fileSystemPath1 = fileSystemPaths.next();
-				
-				if (fileSystemPath1.toString().toLowerCase().contains(serviceInstanceId)) {
-					fileSystemPath = fileSystemPath1;
-					break;
-				}
-			}
-			System.out.println("File System Path :"+ fileSystemPath);
-			CIMObjectPath fileExportServicePath = null;
-			fileExportService = client
-					.enumerateInstanceNames(new CIMObjectPath("root/emc/celerra:Celerra_FileExportService"));
-			if (fileExportService.hasNext()) {
-				fileExportServicePath = fileExportService.next();
-			}
-
-			System.out.println("File Export Service :"+ fileExportService);
-			
-			CIMArgument[] argArray = new CIMArgument[] { string("SharedElementPath", "/"+serviceInstanceId),
-					reference("Root", fileSystemPath) };
-			
-			for(CIMArgument arg : argArray) {
-				System.out.println("Argument :"+ arg.getName()+ ":"+ String.valueOf(arg.getValue()));
-			}
-
-			CIMArgument[] outArgs = new CIMArgument[5];
-
-			// Create FileShare;
-			Object obj = client.invokeMethod(fileExportServicePath, "SNIA_CreateExportedShare", argArray, outArgs);
-			
-			String str = protectedToString(obj);
-			System.out.println("Status :" + str);
-			
-			CIMObjectPath cimJobPath =
-	                getCimObjectPathFromOutputArgs(outArgs, "Job");
-			for(CIMArgument arg : outArgs) {
-				if(null != arg) 
-				System.out.println("OutArgument :"+ arg.getName()+ ":"+ String.valueOf(arg.getValue()));
-			}
-			
-			if(null != cimJobPath) {
-			
-			CIMInstance instance = client.getInstance(cimJobPath, false, false, null);
-			
-			
-			 CIMProperty<UnsignedInteger16> percentComplete =
-             (CIMProperty<UnsignedInteger16>) instance.getProperty("PercentComplete");
-			 
-			 while(percentComplete.getValue().intValue() < 100) {
-				 instance = client.getInstance(cimJobPath, false, false, null);
-					
-					System.out.println("Running");
-				  percentComplete =
-	             (CIMProperty<UnsignedInteger16>) instance.getProperty("PercentComplete");
-			 }
-			
-             System.out.println("Completed");
-			}
-		}finally {
-			if (null != fileSystemPaths)
-				fileSystemPaths.close();
-			if (null != fileExportService)
-				fileExportService.close();
-			if (null != client)
-				closeConnection(client);
-		}
-	}
-
-	public void createFileSystem(String serviceInstanceId, String planId) throws Exception {
+	public void createFileShareService(String serviceInstanceId, String planId) throws Exception {
 		CloseableIterator<CIMObjectPath> fileSystemConfigServicePathItr = null;
 		CloseableIterator<CIMObjectPath> storagePoolsItr = null;
+		CloseableIterator<CIMInstance> instances = null;
 		WBEMClient client = null;
 		try {
-           
+
 			client = instantiateWBEMClient();
 			CIMObjectPath fileSystemConfigServicePath = null;
 			CIMObjectPath poolPath = null;
-			
-			fileSystemConfigServicePathItr = client.enumerateInstanceNames(createCIMPath("root/emc/celerra:Celerra_FileSystemConfigurationService"));
-			
-			
+
+			fileSystemConfigServicePathItr = client
+					.enumerateInstanceNames(createCIMPath("emc/cimnas:CIMNAS_ExportService"));
+
 			while (fileSystemConfigServicePathItr.hasNext()) {
 				fileSystemConfigServicePath = fileSystemConfigServicePathItr.next();
 				if (null != fileSystemConfigServicePath) {
-					System.out.println("File System Service :"+ fileSystemConfigServicePath);
+					System.out.println("File Export Service :" + fileSystemConfigServicePath);
 					break;
 				}
 			}
-			
-			storagePoolsItr = client.enumerateInstanceNames(createCIMPath("root/emc/celerra:Celerra_NonPrimordialStoragePool"));
-			
-			
-			while (storagePoolsItr.hasNext()) {
-				poolPath = storagePoolsItr.next();
-				if(null != poolPath) {
-					System.out.println("Storage Pool :" + poolPath);
-					break;
-				}
-			}
-			
-			
-			
-			CIMObjectPath[] paths = new CIMObjectPath[] {poolPath};
-			UnsignedInteger64[] sizes = new UnsignedInteger64[] { new UnsignedInteger64("10485760") };
 
-			CIMArgument[] argArray = new CIMArgument[] { string("ElementName", "TestFS"), uint64Array("Sizes", sizes),
-					referenceArray("Pools", paths) };
-			for(CIMArgument arg : argArray) {
-				System.out.println("Argument :"+ arg.getName()+ ":"+ String.valueOf(arg.getValue()));
+			instances = client.enumerateInstances(createCIMPath("emc/cimnas:CIMNAS_FileSystem"), false, false, false,
+					null);
+			String fileSystemId = "";
+
+			while (instances.hasNext()) {
+				CIMInstance instance = instances.next();
+				if (instance.getPropertyValue("name").toString().toLowerCase().equalsIgnoreCase("testFS")) {
+					System.out.println("File System Service found:" + fileSystemConfigServicePath);
+					fileSystemId = String.valueOf(instance.getPropertyValue("id"));
+					break;
+				} else {
+					System.out.println("Service found :" + instance.getPropertyValue("name"));
+				}
+			}
+
+			CIMArgument[] argArray = new CIMArgument[] { string("mover", "myServer"), uint64("source", fileSystemId),
+					string("path", "/" + serviceInstanceId) };
+			for (CIMArgument arg : argArray) {
+				System.out.println("Argument :" + arg.getName() + ":" + String.valueOf(arg.getValue()));
 			}
 
 			CIMArgument[] outArgs = new CIMArgument[5];
 
 			// Create FileShare;
-			Object obj = client.invokeMethod(fileSystemConfigServicePath, "SNIA_CreateFileSystem", argArray, outArgs);
+			Object obj = client.invokeMethod(fileSystemConfigServicePath, "CreateExport", argArray, outArgs);
 			String str = protectedToString(obj);
 			System.out.println("Status :" + str);
-			
-			CIMObjectPath cimJobPath =
-	                getCimObjectPathFromOutputArgs(outArgs, "Job");
-			for(CIMArgument arg : outArgs) {
-				if(null != arg) 
-				System.out.println("OutArgument :"+ arg.getName()+ ":"+ String.valueOf(arg.getValue()));
+
+			CIMObjectPath cimJobPath = getCimObjectPathFromOutputArgs(outArgs, "Job");
+			for (CIMArgument arg : outArgs) {
+				if (null != arg)
+					System.out.println("OutArgument :" + arg.getName() + ":" + String.valueOf(arg.getValue()));
 			}
-			
-			if(null != cimJobPath) {
-			
-			CIMInstance instance = client.getInstance(cimJobPath, false, false, null);
-			
-			
-			 CIMProperty<UnsignedInteger16> percentComplete =
-             (CIMProperty<UnsignedInteger16>) instance.getProperty("PercentComplete");
-			 
-			 while(percentComplete.getValue().intValue() < 100) {
-				 instance = client.getInstance(cimJobPath, false, false, null);
-					
+
+			if (null != cimJobPath) {
+
+				CIMInstance instance = client.getInstance(cimJobPath, false, false, null);
+
+				CIMProperty<UnsignedInteger16> percentComplete = (CIMProperty<UnsignedInteger16>) instance
+						.getProperty("PercentComplete");
+
+				while (percentComplete.getValue().intValue() < 100) {
+					instance = client.getInstance(cimJobPath, false, false, null);
+
 					System.out.println("Running");
-				  percentComplete =
-	             (CIMProperty<UnsignedInteger16>) instance.getProperty("PercentComplete");
-			 }
-			
-             System.out.println("Completed");
+					percentComplete = (CIMProperty<UnsignedInteger16>) instance.getProperty("PercentComplete");
+				}
+
+				System.out.println("Completed");
 			}
 			// FileShare instance will be available in the outArgs.
-			
-			createFileShare(serviceInstanceId, planId);
 
-		}  finally {
+			// createFileShare(serviceInstanceId, planId);
+
+		} finally {
 			if (null != fileSystemConfigServicePathItr)
 				fileSystemConfigServicePathItr.close();
 			if (null != storagePoolsItr)
@@ -345,19 +180,94 @@ public class eNasService {
 
 		}
 	}
-	
-	 private CIMObjectPath getCimObjectPathFromOutputArgs(CIMArgument[] outputArguments, String key) {
-	        CIMObjectPath cimObjectPath = null;
-	        for (CIMArgument outArg : outputArguments) {
-	            if (outArg != null) {
-	                if (outArg.getName().equals(key)) {
-	                    cimObjectPath = (CIMObjectPath) outArg.getValue();
-	                    break;
-	                }
-	            }
-	        }
-	        return cimObjectPath;
-	    }
+
+	public void createFileSystemService(String serviceInstanceId, String planId) throws Exception {
+		CloseableIterator<CIMObjectPath> fileSystemConfigServicePathItr = null;
+		CloseableIterator<CIMObjectPath> storagePoolsItr = null;
+		WBEMClient client = null;
+		try {
+
+			client = instantiateWBEMClient();
+			CIMObjectPath fileSystemConfigServicePath = null;
+			CIMObjectPath poolPath = null;
+
+			fileSystemConfigServicePathItr = client
+					.enumerateInstanceNames(createCIMPath("emc/cimnas:CIMNAS_FilesystemService"));
+
+			while (fileSystemConfigServicePathItr.hasNext()) {
+				fileSystemConfigServicePath = fileSystemConfigServicePathItr.next();
+				if (null != fileSystemConfigServicePath) {
+					System.out.println("File System Service :" + fileSystemConfigServicePath);
+					break;
+				}
+			}
+
+			CIMArgument[] argArray = new CIMArgument[] { string("name", "testFS"), string("storagePool", "60"),
+					uint32("storageMB", 1024), bool("thinProvisioningEnabled", false), string("flrState", "off"),
+					bool("autoExtendEnabled", false), string("rwMover", "myServer") };
+
+			for (CIMArgument arg : argArray) {
+				System.out.println("Argument :" + arg.getName() + ":" + String.valueOf(arg.getValue()));
+			}
+
+			CIMArgument[] outArgs = new CIMArgument[5];
+
+			// Create FileShare;
+			Object obj = client.invokeMethod(fileSystemConfigServicePath, "CreateFileSystem", argArray, outArgs);
+			String str = protectedToString(obj);
+			System.out.println("Status :" + str);
+
+			CIMObjectPath cimJobPath = getCimObjectPathFromOutputArgs(outArgs, "Job");
+			for (CIMArgument arg : outArgs) {
+				if (null != arg)
+					System.out.println("OutArgument :" + arg.getName() + ":" + String.valueOf(arg.getValue()));
+			}
+
+			if (null != cimJobPath) {
+
+				CIMInstance instance = client.getInstance(cimJobPath, false, false, null);
+
+				CIMProperty<UnsignedInteger16> percentComplete = (CIMProperty<UnsignedInteger16>) instance
+						.getProperty("PercentComplete");
+
+				while (percentComplete.getValue().intValue() < 100) {
+					instance = client.getInstance(cimJobPath, false, false, null);
+
+					System.out.println("Running");
+					percentComplete = (CIMProperty<UnsignedInteger16>) instance.getProperty("PercentComplete");
+				}
+
+				System.out.println("Completed");
+			}
+			// FileShare instance will be available in the outArgs.
+
+			// createFileShare(serviceInstanceId, planId);
+
+			createFileShareService(serviceInstanceId, planId);
+
+		} finally {
+			if (null != fileSystemConfigServicePathItr)
+				fileSystemConfigServicePathItr.close();
+			if (null != storagePoolsItr)
+				storagePoolsItr.close();
+			if (null != client)
+				closeConnection(client);
+
+		}
+	}
+
+	private CIMObjectPath getCimObjectPathFromOutputArgs(CIMArgument[] outputArguments, String key) {
+		CIMObjectPath cimObjectPath = null;
+		for (CIMArgument outArg : outputArguments) {
+			if (outArg != null) {
+				if (outArg.getName().equals(key)) {
+					cimObjectPath = (CIMObjectPath) outArg.getValue();
+					break;
+				}
+			}
+		}
+		return cimObjectPath;
+	}
 
 	private CIMArgument<CIMObjectPath> reference(String name, CIMObjectPath path) {
 		return build(name, path, CIMDataType.getDataType(path));
@@ -376,31 +286,38 @@ public class eNasService {
 		}
 		return arg;
 	}
-	
-	 public CIMArgument<UnsignedInteger32> uint32(String name, int value) {
-	        return build(name, new UnsignedInteger32(value), CIMDataType.UINT32_T);
-	    }
-	 
-	 public CIMArgument<CIMObjectPath[]> referenceArray(String name, CIMObjectPath[] path) {
-	        return build(name, path, CIMDataType.getDataType(path));
-	    }
-	
-	 private String protectedToString(Object obj) {
-	        String out = "";
-	        if (obj != null) {
-	            try {
-	                out = obj.toString();
-	            } catch (RuntimeException runtime) {
-	                String message = "Caught an exception while trying to call obj.toString()";
-	              
-	            }
-	        }
-	        return out;
-	    }
-	 
-	 public CIMArgument<UnsignedInteger64[]> uint64Array(String name, UnsignedInteger64[] value) {
-	        return build(name, value, CIMDataType.UINT64_ARRAY_T);
-	    }
-	
+
+	public CIMArgument<UnsignedInteger32> uint32(String name, int value) {
+		return build(name, new UnsignedInteger32(value), CIMDataType.UINT32_T);
+	}
+
+	public CIMArgument<UnsignedInteger64> uint64(String name, String value) {
+		return build(name, new UnsignedInteger64(value), CIMDataType.UINT64_T);
+	}
+
+	public CIMArgument<CIMObjectPath[]> referenceArray(String name, CIMObjectPath[] path) {
+		return build(name, path, CIMDataType.getDataType(path));
+	}
+
+	private String protectedToString(Object obj) {
+		String out = "";
+		if (obj != null) {
+			try {
+				out = obj.toString();
+			} catch (RuntimeException runtime) {
+				String message = "Caught an exception while trying to call obj.toString()";
+
+			}
+		}
+		return out;
+	}
+
+	public CIMArgument<Boolean> bool(String name, Boolean value) {
+		return build(name, value, CIMDataType.BOOLEAN_T);
+	}
+
+	public CIMArgument<UnsignedInteger64[]> uint64Array(String name, UnsignedInteger64[] value) {
+		return build(name, value, CIMDataType.UINT64_ARRAY_T);
+	}
 
 }

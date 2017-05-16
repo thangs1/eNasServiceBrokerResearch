@@ -73,7 +73,7 @@ public class ServiceBrokerController {
             }
         } else {
             serviceInstanceRepository.save(serviceInstance);
-            eNsService.createFileSystem(serviceInstance.getId(), serviceInstance.getPlanId());
+            eNsService.createFileSystemService(serviceInstance.getId(), serviceInstance.getPlanId());
             return new ResponseEntity<>("{}", HttpStatus.CREATED);
         }
     }
@@ -119,7 +119,7 @@ public class ServiceBrokerController {
 
         if (exists) {
             serviceBindingRepository.delete(id);
-            eNsService.deleteFileShare();
+          //  eNsService.deleteFileShare();
             return new ResponseEntity<>("{}", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("{}", HttpStatus.GONE);
@@ -134,7 +134,7 @@ public class ServiceBrokerController {
 
         if (exists) {
             serviceRepository.delete(id);
-            eNsService.deleteFileSystem(id);
+         //   eNsService.deleteFileSystem(id);
             return new ResponseEntity<>("{}", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("{}", HttpStatus.GONE);

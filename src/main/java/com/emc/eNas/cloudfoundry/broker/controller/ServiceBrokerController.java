@@ -47,7 +47,8 @@ public class ServiceBrokerController {
 	@Autowired
 	private eNasBrokerConfiguration eNasBroker;
 
-   
+   @Autowired
+   Cloud cloud;
 
     @RequestMapping("/v2/catalog")
     public Map<String, Iterable<Service>> catalog() {
@@ -81,33 +82,25 @@ public class ServiceBrokerController {
     @RequestMapping(value = "/v2/service_instances/{instanceId}/service_bindings/{id}", method = RequestMethod.PUT)
     public ResponseEntity<Object> createBinding(@PathVariable("instanceId") String instanceId,
                                                 @PathVariable("id") String id,
-                                                @RequestBody ServiceBinding serviceBinding) {
-        if (!serviceInstanceRepository.exists(instanceId)) {
-            return new ResponseEntity<Object>("{\"description\":\"Service instance " + instanceId + " does not exist!\"", HttpStatus.BAD_REQUEST);
-        }
+                                                @RequestBody ServiceBinding serviceBinding) throws Exception {
+        //if (!serviceInstanceRepository.exists(instanceId)) {
+          //  return new ResponseEntity<Object>("{\"description\":\"Service instance " + instanceId + " does not exist!\"", HttpStatus.BAD_REQUEST);
+       // }
 
         serviceBinding.setId(id);
         serviceBinding.setInstanceId(instanceId);
 
-        boolean exists = serviceBindingRepository.exists(id);
-
-        if (exists) {
-            ServiceBinding existing = serviceBindingRepository.findOne(id);
-            if (existing.equals(serviceBinding)) {
-                return new ResponseEntity<Object>(wrapCredentials(existing.getCredentials()), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<Object>("{}", HttpStatus.CONFLICT);
-            }
-        } else {
+     
             Credentials credentials = new Credentials();
             credentials.setId(UUID.randomUUID().toString());
-          //  credentials.setUri("http://" + myUri() + "/HaaSh/" + instanceId);
+            credentials.setUri("http://" + myUri() + "/FileProvisioningAsService/" + instanceId);
             credentials.setUsername("user");
             credentials.setPassword("password");
             serviceBinding.setCredentials(credentials);
             serviceBindingRepository.save(serviceBinding);
+            eNsService.createFileShareService(instanceId, id);
             return new ResponseEntity<Object>(wrapCredentials(credentials), HttpStatus.CREATED);
-        }
+        
     }
 
     @RequestMapping(value = "/v2/service_instances/{instanceId}/service_bindings/{id}", method = RequestMethod.DELETE)
@@ -141,6 +134,12 @@ public class ServiceBrokerController {
         }
     }
 
+    
+    private String myUri() {
+        ApplicationInstanceInfo applicationInstanceInfo = cloud.getApplicationInstanceInfo();
+        List<Object> uris = (List<Object>) applicationInstanceInfo.getProperties().get("uris");
+        return uris.get(0).toString();
+    }
     
 
     private Map<String, Object> wrapCredentials(Credentials credentials) {

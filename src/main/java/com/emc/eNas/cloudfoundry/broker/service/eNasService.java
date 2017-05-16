@@ -1,5 +1,7 @@
 package com.emc.eNas.cloudfoundry.broker.service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import javax.cim.CIMArgument;
@@ -116,21 +118,33 @@ public class eNasService {
 				}
 			}
 
-			instances = client.enumerateInstances(createCIMPath("emc/cimnas:CIMNAS_FileSystem"), false, false, false,
-					null);
-			String fileSystemId = "";
-            System.out.println("Finding out file system :" + serviceInstanceId);
-			while (instances.hasNext()) {
-				CIMInstance instance = instances.next();
-				if (instance.getPropertyValue("name").toString().toLowerCase().equalsIgnoreCase("testShare1")) {
-					System.out.println("File System Service found:" + instance.getObjectPath());
-					fileSystemId = String.valueOf(instance.getPropertyValue("id"));
-					break;
-				} else {
-					System.out.println("Service found :" + instance.getPropertyValue("name"));
+			String fileSystemId = null;
+			
+			while (fileSystemId == null) {
+				instances = client.enumerateInstances(createCIMPath("emc/cimnas:CIMNAS_FileSystem"), false, false,
+						false, null);
+
+				System.out.println("Finding out file system :" + serviceInstanceId);
+				List<CIMInstance> instanceList = new ArrayList<>();
+				while (instances.hasNext()) {
+					CIMInstance instance = instances.next();
+
+					if (instance.getPropertyValue("name").toString().toLowerCase().equalsIgnoreCase("testshare4")) {
+						System.out.println("File System Service found:" + instance.getObjectPath());
+						fileSystemId = String.valueOf(instance.getPropertyValue("id"));
+						break;
+					} else {
+						System.out.println("Service found :" + instance.getPropertyValue("name"));
+					}
+				}
+				if (fileSystemId == null) {
+					System.out.println("Sleeping for 60sec");
+					Thread.sleep(60000);
 				}
 			}
-
+			
+			
+            if (null == fileSystemId) return;
 			CIMArgument[] argArray = new CIMArgument[] { string("mover", "myServer"), uint64("source", fileSystemId),
 					string("path", "/"+serviceInstanceId) };
 			for (CIMArgument arg : argArray) {
@@ -168,7 +182,7 @@ public class eNasService {
 			}
 			// FileShare instance will be available in the outArgs.
 
-			// createFileShare(serviceInstanceId, planId);
+		//	createFileShare(serviceInstanceId, planId);
 
 		} finally {
 			if (null != fileSystemConfigServicePathItr)
@@ -184,6 +198,7 @@ public class eNasService {
 	public void createFileSystemService(String serviceInstanceId, String planId) throws Exception {
 		CloseableIterator<CIMObjectPath> fileSystemConfigServicePathItr = null;
 		CloseableIterator<CIMObjectPath> storagePoolsItr = null;
+		CloseableIterator<CIMInstance> instances = null;
 		WBEMClient client = null;
 		try {
 
@@ -193,16 +208,21 @@ public class eNasService {
 
 			fileSystemConfigServicePathItr = client
 					.enumerateInstanceNames(createCIMPath("emc/cimnas:CIMNAS_FilesystemService"));
-
-			while (fileSystemConfigServicePathItr.hasNext()) {
+           
+			while (fileSystemConfigServicePathItr.hasNext() ) {
 				fileSystemConfigServicePath = fileSystemConfigServicePathItr.next();
 				if (null != fileSystemConfigServicePath) {
 					System.out.println("File System Service :" + fileSystemConfigServicePath);
 					break;
 				}
 			}
+			
+			
+				
+				
+		
 
-			CIMArgument[] argArray = new CIMArgument[] { string("name", "testShare1"), string("storagePool", "60"),
+			CIMArgument[] argArray = new CIMArgument[] { string("name", "testShare4"), string("storagePool", "60"),
 					uint32("storageMB", 1024), bool("thinProvisioningEnabled", false), string("flrState", "off"),
 					bool("autoExtendEnabled", false), string("rwMover", "myServer") , string("mountpoint","/"+serviceInstanceId)};
 
@@ -216,6 +236,7 @@ public class eNasService {
 			Object obj = client.invokeMethod(fileSystemConfigServicePath, "CreateFileSystem", argArray, outArgs);
 			String str = protectedToString(obj);
 			System.out.println("Status :" + str);
+			
 
 			CIMObjectPath cimJobPath = getCimObjectPathFromOutputArgs(outArgs, "Job");
 			for (CIMArgument arg : outArgs) {
@@ -243,7 +264,7 @@ public class eNasService {
 
 			// createFileShare(serviceInstanceId, planId);
 
-			createFileShareService(serviceInstanceId, planId);
+	//createFileShareService(serviceInstanceId, planId);
 
 		} finally {
 			if (null != fileSystemConfigServicePathItr)

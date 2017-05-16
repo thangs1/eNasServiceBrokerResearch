@@ -117,7 +117,7 @@ public class eNasService {
 			while (fileSystemPaths.hasNext()) {
 			    CIMObjectPath tempFilePath =  fileSystemPaths.next();
 				
-				if (tempFilePath.toString().toLowerCase().contains(id)) {
+				if (tempFilePath.toString().toLowerCase().contains(id.toLowerCase())) {
 					fileSystemPath = tempFilePath;
 					
 				    break;
@@ -187,11 +187,12 @@ public class eNasService {
 			client = instantiateWBEMClient();
 			CIMObjectPath fileSystemPath = null;
 			fileSystemPaths = client.enumerateInstanceNames(createCIMPath("root/emc/celerra:Celerra_UxfsLocalFileSystem"));
+			System.out.println("Finding cerated file system :" + serviceInstanceId);
 			while (fileSystemPaths.hasNext()) {
-				fileSystemPath = fileSystemPaths.next();
+				CIMObjectPath fileSystemPath1 = fileSystemPaths.next();
 				
-				if (fileSystemPath.toString().toLowerCase().contains(eNasBroker.getFileSystemId())) {
-					
+				if (fileSystemPath1.toString().toLowerCase().contains(serviceInstanceId)) {
+					fileSystemPath = fileSystemPath1;
 					break;
 				}
 			}
@@ -331,6 +332,8 @@ public class eNasService {
              System.out.println("Completed");
 			}
 			// FileShare instance will be available in the outArgs.
+			
+			createFileShare(serviceInstanceId, planId);
 
 		}  finally {
 			if (null != fileSystemConfigServicePathItr)

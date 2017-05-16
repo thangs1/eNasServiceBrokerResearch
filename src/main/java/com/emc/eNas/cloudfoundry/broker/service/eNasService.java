@@ -119,11 +119,11 @@ public class eNasService {
 			instances = client.enumerateInstances(createCIMPath("emc/cimnas:CIMNAS_FileSystem"), false, false, false,
 					null);
 			String fileSystemId = "";
-
+            System.out.println("Finding out file system :" + serviceInstanceId);
 			while (instances.hasNext()) {
 				CIMInstance instance = instances.next();
-				if (instance.getPropertyValue("name").toString().toLowerCase().equalsIgnoreCase("testFS")) {
-					System.out.println("File System Service found:" + fileSystemConfigServicePath);
+				if (instance.getPropertyValue("name").toString().toLowerCase().equalsIgnoreCase("testShare1")) {
+					System.out.println("File System Service found:" + instance.getObjectPath());
 					fileSystemId = String.valueOf(instance.getPropertyValue("id"));
 					break;
 				} else {
@@ -132,7 +132,7 @@ public class eNasService {
 			}
 
 			CIMArgument[] argArray = new CIMArgument[] { string("mover", "myServer"), uint64("source", fileSystemId),
-					string("path", "/" + serviceInstanceId) };
+					string("path", "/"+serviceInstanceId) };
 			for (CIMArgument arg : argArray) {
 				System.out.println("Argument :" + arg.getName() + ":" + String.valueOf(arg.getValue()));
 			}
@@ -202,9 +202,9 @@ public class eNasService {
 				}
 			}
 
-			CIMArgument[] argArray = new CIMArgument[] { string("name", "testFS"), string("storagePool", "60"),
+			CIMArgument[] argArray = new CIMArgument[] { string("name", "testShare1"), string("storagePool", "60"),
 					uint32("storageMB", 1024), bool("thinProvisioningEnabled", false), string("flrState", "off"),
-					bool("autoExtendEnabled", false), string("rwMover", "myServer") };
+					bool("autoExtendEnabled", false), string("rwMover", "myServer") , string("mountpoint","/"+serviceInstanceId)};
 
 			for (CIMArgument arg : argArray) {
 				System.out.println("Argument :" + arg.getName() + ":" + String.valueOf(arg.getValue()));
